@@ -1,0 +1,9 @@
+target/
+dbt_packages/
+logs/
+.venv/
+*.csv
+!fixtures/*.csv
+__pycache__/
+*.pyc
+.DS_Store
