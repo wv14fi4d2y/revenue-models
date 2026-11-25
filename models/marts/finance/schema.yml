@@ -1,0 +1,48 @@
+version: 2
+
+models:
+  - name: stg_subscriptions
+    description: >
+      Billing subscriptions, typed. Grain: one row per subscription_id.
+      Canceled rows are retained so historical revenue stays explainable.
+    columns:
+      - name: subscription_id
+        tests: [unique, not_null]
+      - name: account_id
+        tests: [not_null]
+      - name: status
+        tests:
+          - accepted_values:
+              values: ['trialing', 'active', 'past_due', 'canceled']
+      - name: mrr_cents
+        tests:
+          - not_null
+
+  - name: stg_invoice_lines
+    description: >
+      Invoice lines with a usable service window. Grain: one row per
+      invoice_line_id. Lines without `period_start`/`period_end` are dropped here,
+      not in the mart, so the exclusion is visible.
+    columns:
+      - name: invoice_line_id
+        tests: [unique, not_null]
+      - name: period_end
+        tests: [not_null]
+
+  - name: subscription_revenue
+    description: >
+      Recognized subscription revenue in cents. Grain: one row per account_id per
+      month_start. Do not sum across accounts without deduplicating on the grain.
+    columns:
+      - name: account_id
+        tests: [not_null]
+      - name: month_start
+        tests: [not_null]
+      - name: recognized_revenue_cents
+        description: Straight-line prorated revenue for the month, in cents.
+        tests: [not_null]
+      - name: days_with_revenue
+        description: Days in the month that actually carried revenue.
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [account_id, month_start]
