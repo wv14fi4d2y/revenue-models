@@ -1,0 +1,23 @@
+version: 2
+
+sources:
+  - name: billing
+    description: Read-only replica of the billing service. Amounts are integer cents.
+    schema: billing
+    tables:
+      - name: subscriptions
+        description: One row per subscription. `mrr_cents` is the contracted amount.
+        columns:
+          - name: subscription_id
+            tests:
+              - unique
+              - not_null
+      - name: invoice_lines
+        description: >
+          Billed lines. `period_start`/`period_end` are the service window the line
+          covers; `period_end` is exclusive.
+        columns:
+          - name: invoice_line_id
+            tests:
+              - unique
+              - not_null
