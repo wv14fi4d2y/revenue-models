@@ -1,0 +1,31 @@
+version: 2
+
+models:
+  - name: monthly_retention
+    description: >
+      Net revenue retention per month, built from account-month revenue movements.
+      Grain: one row per month_start. Only consecutive month pairs are compared, so
+      an account with a gap in revenue is counted as new when it returns, not as
+      churn followed by expansion.
+    columns:
+      - name: month_start
+        tests: [unique, not_null]
+      - name: base_cents
+        description: Prior-month revenue of accounts present in both months.
+      - name: expansion_cents
+        description: Revenue added on top of an account's base.
+      - name: contraction_cents
+        description: Revenue lost while the account stays active.
+      - name: churn_cents
+        description: Base revenue of accounts that dropped to zero.
+      - name: ending_cents
+        description: Current-month revenue across all accounts, new ones included.
+      - name: net_revenue_retention
+        description: >
+          (base + expansion - contraction - churn) / base, 4 decimal places.
+          Null when there is no base revenue to retain.
+    tests:
+      - dbt_utils.expression_is_true:
+          expression: "base_cents >= 0 and churn_cents >= 0"
+      - dbt_utils.expression_is_true:
+          expression: "net_revenue_retention is null or net_revenue_retention >= 0"
